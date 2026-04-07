@@ -1,22 +1,23 @@
 import requests
 import os
 import json
+import re
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def parse_command(user_input):
     prompt = f"""
-    Convert this into STRICT JSON:
+    Convert this into STRICT JSON ONLY.
+
+    Do NOT include any explanation or text.
 
     "{user_input}"
 
-    Format:
+    Output format:
     {{
         "title": "...",
         "time": "YYYY-MM-DDTHH:MM:SS"
     }}
-
-    Only return JSON.
     """
 
     try:
@@ -35,16 +36,20 @@ def parse_command(user_input):
         )
 
         result = response.json()
-
-        print("DEBUG RESPONSE:", result)  # 🔥 IMPORTANT
+        print("DEBUG RESPONSE:", result)
 
         content = result["choices"][0]["message"]["content"]
 
-        return json.loads(content)
+        # 🔥 Extract only JSON from response
+        match = re.search(r"\{.*\}", content, re.DOTALL)
+
+        if match:
+            return json.loads(match.group())
+        else:
+            raise ValueError("No JSON found")
 
     except Exception as e:
-        print("ERROR:", str(e))  # 🔥 IMPORTANT
-
+        print("ERROR:", str(e))
         return {
             "title": "Fallback Task",
             "time": "2026-04-07T22:00:00"
