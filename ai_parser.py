@@ -6,11 +6,17 @@ import re
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def parse_command(user_input):
+    # 🔥 Improved prompt for better titles
     prompt = f"""
     Convert this into STRICT JSON ONLY.
 
-    Do NOT include any explanation or text.
+    Extract a SHORT task title (1–3 words max).
 
+    Examples:
+    - "remind me to study at 10 pm" → "Study"
+    - "check on my workout in 30 minutes" → "Workout"
+
+    Input:
     "{user_input}"
 
     Output format:
@@ -18,6 +24,8 @@ def parse_command(user_input):
         "title": "...",
         "time": "YYYY-MM-DDTHH:MM:SS"
     }}
+
+    No explanation. No markdown. Only JSON.
     """
 
     try:
@@ -38,9 +46,18 @@ def parse_command(user_input):
         result = response.json()
         print("DEBUG RESPONSE:", result)
 
+        # 🔥 Handle API error properly
+        if "error" in result:
+            raise ValueError(result["error"]["message"])
+
         content = result["choices"][0]["message"]["content"]
 
-        # 🔥 Extract only JSON from response
+        print("RAW OUTPUT:", content)
+
+        # 🔥 Remove markdown if present
+        content = content.replace("```json", "").replace("```", "").strip()
+
+        # 🔥 Extract JSON safely
         match = re.search(r"\{.*\}", content, re.DOTALL)
 
         if match:
