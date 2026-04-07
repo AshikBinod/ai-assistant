@@ -5,7 +5,7 @@ from whatsapp import send_whatsapp_message
 
 scheduler = BackgroundScheduler()
 
-# 🔥 Track last sent task
+# 🔥 Shared state
 last_task_id = None
 
 def check_tasks():
@@ -22,7 +22,7 @@ def check_tasks():
             # 📲 Send WhatsApp
             send_whatsapp_message(message)
 
-            # 🔥 STORE TASK (do NOT complete here)
+            # 🔥 STORE TASK ID
             last_task_id = task.id
 
 def start_scheduler():

@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from datetime import datetime
 from task_manager import create_task, get_tasks, complete_task
-from scheduler import start_scheduler, last_task_id  # 🔥 IMPORT
+import scheduler  # 🔥 FIX: import module, NOT variable
 from models import Base
 from database import engine
 from ai_parser import parse_command
@@ -14,7 +14,7 @@ app = FastAPI()
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
-    start_scheduler()
+    scheduler.start_scheduler()
 
 @app.get("/")
 def home():
@@ -54,19 +54,24 @@ def test_whatsapp():
     send_whatsapp_message("🔥 Your AI assistant is working!")
     return {"message": "WhatsApp message sent"}
 
-# 🔥 SMART WEBHOOK
+# 🔥 FINAL SMART WEBHOOK
 @app.post("/whatsapp_webhook")
 async def whatsapp_webhook(request: Request):
     form = await request.form()
     incoming_msg = form.get("Body", "").lower()
 
     print("Incoming message:", incoming_msg)
+    print("Last task ID:", scheduler.last_task_id)  # 🔍 DEBUG
 
     twilio_response = MessagingResponse()
 
     if "done" in incoming_msg:
-        if last_task_id:
-            complete_task(last_task_id)
+        if scheduler.last_task_id:
+            complete_task(scheduler.last_task_id)
+
+            # 🔥 RESET after completion
+            scheduler.last_task_id = None
+
             reply = "✅ Task marked as completed. Good job!"
         else:
             reply = "⚠️ No active task found."
