@@ -2,35 +2,22 @@ import requests
 import os
 import json
 import re
+from datetime import datetime, timedelta
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def parse_command(user_input):
-    # 🔥 Stronger prompt for cleaner titles
+    # 🔥 Simple prompt (ONLY title)
     prompt = f"""
-    You are an AI assistant that extracts tasks.
-
-    RULES:
-    - Extract ONLY the core action as title (1–2 words)
-    - Remove phrases like "remind me", "check", "please"
-    - Keep it clean and concise
-    - Capitalize properly
-
-    Examples:
-    - "remind me to study at 10 pm" → "Study"
-    - "check my workout in 30 minutes" → "Workout"
-    - "finish RCC revision at 6 pm" → "RCC Revision"
+    Extract a SHORT task title (1–3 words).
 
     Input:
     "{user_input}"
 
-    Return STRICT JSON only:
+    Output JSON:
     {{
-        "title": "...",
-        "time": "YYYY-MM-DDTHH:MM:SS"
+        "title": "..."
     }}
-
-    No explanation. No markdown. Only JSON.
     """
 
     try:
@@ -51,40 +38,35 @@ def parse_command(user_input):
         result = response.json()
         print("DEBUG RESPONSE:", result)
 
-        # 🔥 Handle API errors
-        if "error" in result:
-            raise ValueError(result["error"]["message"])
-
         content = result["choices"][0]["message"]["content"]
-        print("RAW OUTPUT:", content)
-
-        # 🔥 Remove markdown artifacts
         content = content.replace("```json", "").replace("```", "").strip()
 
-        # 🔥 Extract JSON block
         match = re.search(r"\{.*\}", content, re.DOTALL)
+        data = json.loads(match.group())
 
-        if match:
-            parsed = json.loads(match.group())
+        # 🔥 TIME HANDLING (VERY IMPORTANT)
+        now = datetime.now()
 
-            # 🔥 Safety cleanup (extra protection)
-            title = parsed.get("title", "Task").strip()
-            time = parsed.get("time")
+        if "minute" in user_input:
+            minutes = int(re.search(r"\d+", user_input).group())
+            scheduled_time = now + timedelta(minutes=minutes)
 
-            # Basic cleanup of title
-            title = title.replace("Remind me to", "").strip()
-
-            return {
-                "title": title,
-                "time": time
-            }
+        elif "hour" in user_input:
+            hours = int(re.search(r"\d+", user_input).group())
+            scheduled_time = now + timedelta(hours=hours)
 
         else:
-            raise ValueError("No JSON found")
+            # fallback: 1 minute later
+            scheduled_time = now + timedelta(minutes=1)
+
+        return {
+            "title": data["title"],
+            "time": scheduled_time.isoformat()
+        }
 
     except Exception as e:
         print("ERROR:", str(e))
         return {
-            "title": "Fallback Task",
-            "time": "2026-04-07T22:00:00"
+            "title": "Task",
+            "time": (datetime.now() + timedelta(minutes=1)).isoformat()
         }
