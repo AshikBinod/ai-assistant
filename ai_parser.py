@@ -19,26 +19,32 @@ def parse_command(user_input):
     Only return JSON.
     """
 
-    response = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "llama3-70b-8192",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
-    )
-
-    result = response.json()
-    content = result["choices"][0]["message"]["content"]
-
     try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama3-70b-8192",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ]
+            }
+        )
+
+        result = response.json()
+
+        print("DEBUG RESPONSE:", result)  # 🔥 IMPORTANT
+
+        content = result["choices"][0]["message"]["content"]
+
         return json.loads(content)
-    except:
+
+    except Exception as e:
+        print("ERROR:", str(e))  # 🔥 IMPORTANT
+
         return {
             "title": "Fallback Task",
             "time": "2026-04-07T22:00:00"
