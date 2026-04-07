@@ -6,20 +6,25 @@ import re
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def parse_command(user_input):
-    # 🔥 Improved prompt for better titles
+    # 🔥 Stronger prompt for cleaner titles
     prompt = f"""
-    Convert this into STRICT JSON ONLY.
+    You are an AI assistant that extracts tasks.
 
-    Extract a SHORT task title (1–3 words max).
+    RULES:
+    - Extract ONLY the core action as title (1–2 words)
+    - Remove phrases like "remind me", "check", "please"
+    - Keep it clean and concise
+    - Capitalize properly
 
     Examples:
     - "remind me to study at 10 pm" → "Study"
-    - "check on my workout in 30 minutes" → "Workout"
+    - "check my workout in 30 minutes" → "Workout"
+    - "finish RCC revision at 6 pm" → "RCC Revision"
 
     Input:
     "{user_input}"
 
-    Output format:
+    Return STRICT JSON only:
     {{
         "title": "...",
         "time": "YYYY-MM-DDTHH:MM:SS"
@@ -46,22 +51,34 @@ def parse_command(user_input):
         result = response.json()
         print("DEBUG RESPONSE:", result)
 
-        # 🔥 Handle API error properly
+        # 🔥 Handle API errors
         if "error" in result:
             raise ValueError(result["error"]["message"])
 
         content = result["choices"][0]["message"]["content"]
-
         print("RAW OUTPUT:", content)
 
-        # 🔥 Remove markdown if present
+        # 🔥 Remove markdown artifacts
         content = content.replace("```json", "").replace("```", "").strip()
 
-        # 🔥 Extract JSON safely
+        # 🔥 Extract JSON block
         match = re.search(r"\{.*\}", content, re.DOTALL)
 
         if match:
-            return json.loads(match.group())
+            parsed = json.loads(match.group())
+
+            # 🔥 Safety cleanup (extra protection)
+            title = parsed.get("title", "Task").strip()
+            time = parsed.get("time")
+
+            # Basic cleanup of title
+            title = title.replace("Remind me to", "").strip()
+
+            return {
+                "title": title,
+                "time": time
+            }
+
         else:
             raise ValueError("No JSON found")
 
