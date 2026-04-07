@@ -28,7 +28,7 @@ def parse_command(user_input):
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama3-8b-8192",
+                "model": ""model": "llama-3.1-8b-instant",",
                 "messages": [
                     {"role": "user", "content": prompt}
                 ]
