@@ -1,11 +1,16 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-from task_manager import get_tasks, complete_task
+from task_manager import get_tasks
 from whatsapp import send_whatsapp_message
 
 scheduler = BackgroundScheduler()
 
+# 🔥 Track last sent task
+last_task_id = None
+
 def check_tasks():
+    global last_task_id
+
     tasks = get_tasks()
     now = datetime.now()
 
@@ -14,11 +19,11 @@ def check_tasks():
             message = f"⏰ Reminder: {task.title}"
             print(message)
 
-            # 📲 Send WhatsApp message
+            # 📲 Send WhatsApp
             send_whatsapp_message(message)
 
-            # ✅ Mark task as completed to prevent repeat messages
-            complete_task(task.id)
+            # 🔥 STORE TASK (do NOT complete here)
+            last_task_id = task.id
 
 def start_scheduler():
     scheduler.add_job(check_tasks, "interval", seconds=30)
