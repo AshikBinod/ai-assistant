@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import Response  # 🔥 IMPORTANT
 from datetime import datetime
 from task_manager import create_task, get_tasks, complete_task
 from scheduler import start_scheduler
@@ -60,13 +61,15 @@ def test_whatsapp():
     send_whatsapp_message("🔥 Your AI assistant is working!")
     return {"message": "WhatsApp message sent"}
 
-# 🔥 WHATSAPP WEBHOOK (INTERACTIVE)
+# 🔥 WHATSAPP WEBHOOK (FIXED)
 @app.post("/whatsapp_webhook")
 async def whatsapp_webhook(request: Request):
     form = await request.form()
     incoming_msg = form.get("Body", "").lower()
 
-    response = MessagingResponse()
+    print("Incoming message:", incoming_msg)  # 🔍 DEBUG
+
+    twilio_response = MessagingResponse()
 
     if "done" in incoming_msg:
         reply = "✅ Task marked as completed. Good job!"
@@ -75,5 +78,10 @@ async def whatsapp_webhook(request: Request):
     else:
         reply = "🤖 Reply 'done' when finished or 'not yet'."
 
-    response.message(reply)
-    return str(response)
+    twilio_response.message(reply)
+
+    # 🔥 CRITICAL FIX: return proper XML
+    return Response(
+        content=str(twilio_response),
+        media_type="application/xml"
+    )
