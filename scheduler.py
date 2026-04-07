@@ -5,7 +5,7 @@ from whatsapp import send_whatsapp_message
 
 scheduler = BackgroundScheduler()
 
-# 🔥 Shared state
+# 🔥 Persistent state
 last_task_id = None
 
 def check_tasks():
@@ -14,16 +14,22 @@ def check_tasks():
     tasks = get_tasks()
     now = datetime.now()
 
+    # 🔥 ONLY assign if no active task
+    if last_task_id is not None:
+        return
+
     for task in tasks:
         if task.status == "pending" and task.scheduled_time <= now:
             message = f"⏰ Reminder: {task.title}"
             print(message)
 
-            # 📲 Send WhatsApp
             send_whatsapp_message(message)
 
-            # 🔥 STORE TASK ID
+            # 🔥 SET ONLY ONCE
             last_task_id = task.id
+            print("Set last_task_id:", last_task_id)
+
+            break  # 🔥 IMPORTANT: stop after first match
 
 def start_scheduler():
     scheduler.add_job(check_tasks, "interval", seconds=30)
