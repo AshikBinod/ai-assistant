@@ -9,17 +9,15 @@ app = FastAPI()
 
 @app.on_event("startup")
 def startup():
-    # 🔥 Create database tables automatically
     Base.metadata.create_all(bind=engine)
-
-    # Start scheduler
     start_scheduler()
 
 @app.get("/")
 def home():
     return {"status": "Assistant running"}
 
-@app.post("/add_task")
+# ✅ THIS WAS MISSING
+@app.get("/add_task")
 def add_task_api(title: str, time: str):
     scheduled_time = datetime.fromisoformat(time)
     create_task(title, scheduled_time)
