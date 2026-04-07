@@ -4,6 +4,8 @@ from task_manager import create_task, get_tasks, complete_task
 from scheduler import start_scheduler
 from models import Base
 from database import engine
+from ai_parser import parse_command  # 🔥 NEW
+import json
 
 app = FastAPI()
 
@@ -16,7 +18,7 @@ def startup():
 def home():
     return {"status": "Assistant running"}
 
-# ✅ THIS WAS MISSING
+# ✅ Manual task (works from browser)
 @app.get("/add_task")
 def add_task_api(title: str, time: str):
     scheduled_time = datetime.fromisoformat(time)
@@ -31,3 +33,18 @@ def tasks():
 def done(task_id: int):
     complete_task(task_id)
     return {"message": "Task completed"}
+
+# 🔥 NEW — AI-powered task creation
+@app.get("/ai_add")
+def ai_add(input: str):
+    data = parse_command(input)
+
+    create_task(
+        data["title"],
+        datetime.fromisoformat(data["time"])
+    )
+
+    return {
+        "message": "Task created via AI",
+        "parsed": data
+    }
