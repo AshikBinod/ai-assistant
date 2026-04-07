@@ -2,11 +2,17 @@ from fastapi import FastAPI
 from datetime import datetime
 from task_manager import create_task, get_tasks, complete_task
 from scheduler import start_scheduler
+from models import Base
+from database import engine
 
 app = FastAPI()
 
 @app.on_event("startup")
 def startup():
+    # 🔥 Create database tables automatically
+    Base.metadata.create_all(bind=engine)
+
+    # Start scheduler
     start_scheduler()
 
 @app.get("/")
